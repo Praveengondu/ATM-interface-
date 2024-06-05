@@ -1,0 +1,135 @@
+class User:
+    def __init__(self, user_id, pin, balance=0):
+        self.user_id = user_id
+        self.pin = pin
+        self.balance = balance
+        self.transaction_history = []
+
+    def check_pin(self, pin):
+        return self.pin == pin
+
+    def add_transaction(self, transaction):
+        self.transaction_history.append(transaction)
+
+    def get_transaction_history(self):
+        return self.transaction_history
+
+
+class ATM:
+    def __init__(self):
+        self.users = {}
+        self.current_user = None
+
+    def add_user(self, user):
+        self.users[user.user_id] = user
+
+    def authenticate_user(self, user_id, pin):
+        user = self.users.get(user_id)
+        if user and user.check_pin(pin):
+            self.current_user = user
+            return True
+        return False
+
+    def deauthenticate_user(self):
+        self.current_user = None
+
+    def get_current_user(self):
+        return self.current_user
+
+
+class TransactionsHistory:
+    @staticmethod
+    def show_history(user):
+        if user.transaction_history:
+            for transaction in user.transaction_history:
+                print(transaction)
+        else:
+            print("No transactions yet.")
+
+
+class Withdraw:
+    @staticmethod
+    def withdraw(user, amount):
+        if user.balance >= amount:
+            user.balance -= amount
+            user.add_transaction(f"Withdrawn: {amount}")
+            print(f"Withdrawn: {amount}")
+        else:
+            print("Insufficient balance.")
+
+
+class Deposit:
+    @staticmethod
+    def deposit(user, amount):
+        user.balance += amount
+        user.add_transaction(f"Deposited: {amount}")
+        print(f"Deposited: {amount}")
+
+
+class Transfer:
+    @staticmethod
+    def transfer(user, recipient, amount):
+        if user.balance >= amount:
+            user.balance -= amount
+            recipient.balance += amount
+            user.add_transaction(f"Transferred: {amount} to User {recipient.user_id}")
+            recipient.add_transaction(f"Received: {amount} from User {user.user_id}")
+            print(f"Transferred: {amount} to User {recipient.user_id}")
+        else:
+            print("Insufficient balance.")
+
+
+def main():
+    atm = ATM()
+
+    # Sample users
+    atm.add_user(User("user1", "1111", 1000))
+    atm.add_user(User("user2", "2222", 2000))
+
+    while True:
+        print("Enter your user ID:")
+        user_id = input().strip()
+        print("Enter your PIN:")
+        pin = input().strip()
+
+        if atm.authenticate_user(user_id, pin):
+            print("Authentication successful!")
+            user = atm.get_current_user()
+            
+            while True:
+                print("\nATM Menu:")
+                print("1. Transaction History")
+                print("2. Withdraw")
+                print("3. Deposit")
+                print("4. Transfer")
+                print("5. Quit")
+                choice = input("Choose an option: ")
+
+                if choice == '1':
+                    TransactionsHistory.show_history(user)
+                elif choice == '2':
+                    amount = float(input("Enter amount to withdraw: "))
+                    Withdraw.withdraw(user, amount)
+                elif choice == '3':
+                    amount = float(input("Enter amount to deposit: "))
+                    Deposit.deposit(user, amount)
+                elif choice == '4':
+                    recipient_id = input("Enter recipient user ID: ")
+                    amount = float(input("Enter amount to transfer: "))
+                    recipient = atm.users.get(recipient_id)
+                    if recipient:
+                        Transfer.transfer(user, recipient, amount)
+                    else:
+                        print("Recipient user ID not found.")
+                elif choice == '5':
+                    atm.deauthenticate_user()
+                    print("Logged out.")
+                    break
+                else:
+                    print("Invalid choice. Please try again.")
+        else:
+            print("Authentication failed. Please try again.")
+
+
+if __name__ == "__main__":
+    main()
